@@ -501,13 +501,43 @@
         document.getElementById('attendanceDate').valueAsDate = new Date();
 
         // Tab switching
-        function showTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-            event.target.classList.add('active');
-            document.getElementById(tabName).classList.add('active');
-            
-            if (tabName === 'students' || tabName === 'attendance' || tabName === 'stats') {
+        function showTab(tabNameOrEvent) {
+            const tabs = Array.from(document.querySelectorAll('.tab'));
+            const contents = Array.from(document.querySelectorAll('.content'));
+
+            // clear current active states
+            tabs.forEach(t => t.classList.remove('active'));
+            contents.forEach(c => c.classList.remove('active'));
+
+            // decide which tab to activate
+            let tabIndex = -1;
+            if (typeof tabNameOrEvent === 'string') {
+                const nameToIndex = { classes: 0, students: 1, attendance: 2, stats: 3 };
+                tabIndex = nameToIndex[tabNameOrEvent];
+                if (tabIndex !== undefined && tabIndex >= 0) {
+                    tabs[tabIndex].classList.add('active');
+                    contents[tabIndex].classList.add('active');
+                }
+            } else if (tabNameOrEvent && tabNameOrEvent.target) {
+                // called with an event-like object or a button element wrapped as { target: btn }
+                const btn = tabNameOrEvent.target;
+                tabIndex = tabs.indexOf(btn);
+                if (tabIndex >= 0) {
+                    btn.classList.add('active');
+                    contents[tabIndex].classList.add('active');
+                }
+            } else if (tabNameOrEvent && tabNameOrEvent.nodeType === 1) {
+                // direct element passed
+                const btn = tabNameOrEvent;
+                tabIndex = tabs.indexOf(btn);
+                if (tabIndex >= 0) {
+                    btn.classList.add('active');
+                    contents[tabIndex].classList.add('active');
+                }
+            }
+
+            // load selects for tabs that need it
+            if (tabIndex >= 1) { // students (1), attendance (2), stats (3)
                 loadClassSelects();
             }
         }
