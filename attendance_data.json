@@ -1,49 +1,39 @@
 {
   "classes": [
     {
-      "course_code": "d",
-      "course_name": "d",
-      "semester": "d",
-      "schedule": "d",
-      "room": "s",
-      "id": "d_d",
-      "created_at": "2025-10-31T12:48:50.175888"
+      "course_code": "cs305",
+      "course_name": "advanced computing",
+      "semester": "fall 2025",
+      "schedule": "M W 11:40",
+      "room": "HH 207",
+      "id": "cs305_fall 2025",
+      "created_at": "2025-10-31T15:23:33.305685"
     }
   ],
   "students": {
-    "d_d": [
+    "cs305_fall 2025": [
       {
-        "student_id": "001",
-        "first_name": "Chris",
-        "last_name": "B",
-        "email": "s0001@monmouth.edu",
+        "student_id": "s003",
+        "first_name": "W",
+        "last_name": "Q",
+        "email": "wqu@m.edu",
         "id": "student_0"
       },
       {
-        "student_id": "002",
-        "first_name": "Dan",
-        "last_name": "C",
-        "email": "s002@monmouth.edu",
+        "student_id": "123",
+        "first_name": "dan",
+        "last_name": "c",
+        "email": "dan@m.u",
         "id": "student_1"
       }
     ]
   },
   "attendance": {
-    "d_d": {
+    "cs305_fall 2025": {
       "2025-10-31": [
         {
           "student_id": "student_0",
-          "status": "late"
-        }
-      ],
-      "2025-11-01": [
-        {
-          "student_id": "student_0",
           "status": "present"
-        },
-        {
-          "student_id": "student_1",
-          "status": "absent"
         }
       ]
     }
