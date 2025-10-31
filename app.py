@@ -10,9 +10,23 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})
 DATA_FILE = 'attendance_data.json'
 
 def load_data():
+    # Prefer the writable fallback file in /tmp when present (Vercel serverless writes there)
+    fallback = '/tmp/attendance_data.json'
+    if os.path.exists(fallback):
+        try:
+            with open(fallback, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            app.logger.warning('Could not read fallback %s: %s', fallback, e)
+
+    # Fallback to packaged DATA_FILE
     if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
+        try:
+            with open(DATA_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            app.logger.warning('Could not read %s: %s', DATA_FILE, e)
+
     return {'classes': [], 'students': {}, 'attendance': {}}
 
 def save_data(data):
