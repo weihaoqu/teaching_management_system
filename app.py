@@ -16,8 +16,22 @@ def load_data():
     return {'classes': [], 'students': {}, 'attendance': {}}
 
 def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    """Try to save to DATA_FILE; on failure try /tmp fallback. Return True on success, False on failure."""
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=2)
+        return True
+    except Exception as e:
+        app.logger.warning('Could not write to %s: %s', DATA_FILE, e)
+        fallback = '/tmp/attendance_data.json'
+        try:
+            with open(fallback, 'w') as f:
+                json.dump(data, f, indent=2)
+            app.logger.info('Wrote data to fallback %s', fallback)
+            return True
+        except Exception as e2:
+            app.logger.exception('Failed to save data to fallback: %s', e2)
+            return False
 
 @app.route('/')
 def index():
@@ -28,22 +42,58 @@ def manage_classes():
     data = load_data()
     
     if request.method == 'POST':
-        class_info = request.json
-        class_id = f"{class_info['course_code']}_{class_info['semester']}"
-        class_info['id'] = class_id
-        class_info['created_at'] = datetime.now().isoformat()
-        
-        # Check if class already exists
-        existing = next((c for c in data['classes'] if c['id'] == class_id), None)
-        if existing:
-            data['classes'] = [c if c['id'] != class_id else class_info for c in data['classes']]
-        else:
-            data['classes'].append(class_info)
-            data['students'][class_id] = []
-            data['attendance'][class_id] = {}
-        
-        save_data(data)
-        return jsonify({'success': True, 'class': class_info})
+        try:
+            # accept JSON or form-encoded submissions
+            class_info = request.get_json(silent=True)
+            if not class_info:
+                # try to build from form data (in case frontend submits as form)
+                class_info = {
+                    'course_code': request.form.get('course_code'),
+                    'semester': request.form.get('semester'),
+                    'course_name': request.form.get('course_name') or request.form.get('name'),
+                    'schedule': request.form.get('schedule'),
+                    'room': request.form.get('room')
+                }
+
+            # normalize possible alternate keys
+            if 'name' in class_info and 'course_name' not in class_info:
+                class_info['course_name'] = class_info.get('name')
+
+            # validate required fields
+            if not class_info or not class_info.get('course_code') or not class_info.get('semester'):
+                app.logger.warning('Invalid class POST payload: %s', class_info)
+                return jsonify({'success': False, 'error': 'Missing course_code or semester'}), 400
+
+            # ensure canonical keys exist (avoid KeyError in templates)
+            class_info.setdefault('course_name', '')
+            class_info.setdefault('schedule', '')
+            class_info.setdefault('room', '')
+
+            class_id = f"{class_info['course_code']}_{class_info['semester']}"
+            class_info['id'] = class_id
+            class_info['created_at'] = datetime.now().isoformat()
+
+            # Check if class already exists
+            existing = next((c for c in data['classes'] if c.get('id') == class_id), None)
+            if existing:
+                # update existing entry (preserve created_at if present)
+                if 'created_at' in existing:
+                    class_info['created_at'] = existing['created_at']
+                data['classes'] = [c if c.get('id') != class_id else class_info for c in data['classes']]
+            else:
+                data['classes'].append(class_info)
+                data['students'].setdefault(class_id, [])
+                data['attendance'].setdefault(class_id, {})
+
+            saved = save_data(data)
+            if not saved:
+                return jsonify({'success': False, 'error': 'Failed to persist data'}), 500
+
+            app.logger.info('Class added/updated: %s', class_id)
+            return jsonify({'success': True, 'class': class_info}), 201
+        except Exception as e:
+            app.logger.exception('Error processing class POST: %s', e)
+            return jsonify({'success': False, 'error': 'Server error'}), 500
     
     return jsonify(data['classes'])
 
