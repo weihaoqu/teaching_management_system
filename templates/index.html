@@ -636,12 +636,21 @@
             try {
                 const response = await fetch(`${API_URL}/classes`);
                 const classes = await response.json();
-                
+
                 ['studentClassSelect', 'attendanceClassSelect', 'statsClassSelect'].forEach(selectId => {
                     const select = document.getElementById(selectId);
                     select.innerHTML = '<option value="">-- Select a class --</option>' + 
                         classes.map(c => `<option value="${c.id}">${c.course_code}: ${c.course_name} (${c.semester})</option>`).join('');
+                    // ensure no class is pre-selected
+                    select.value = '';
                 });
+
+                // when no class selected, clear dependent views and disable buttons
+                document.getElementById('studentList').innerHTML = '';
+                document.getElementById('attendanceGrid').innerHTML = '';
+                document.getElementById('statsGrid').innerHTML = '';
+                document.getElementById('addStudentBtn').disabled = true;
+                document.getElementById('saveAttendanceBtn').disabled = true;
             } catch (error) {
                 console.error('Error loading class selects:', error);
             }
@@ -650,7 +659,8 @@
         // Select class
         function selectClass(classId) {
             document.getElementById('studentClassSelect').value = classId;
-            showTab({target: document.querySelectorAll('.tab')[1]});
+            // use named tab switch to avoid relying on event.target (which can be undefined when called programmatically)
+            showTab('students');
             loadStudents();
         }
 
@@ -700,17 +710,33 @@
                 return;
             }
 
-            const studentData = {
-                student_id: document.getElementById('studentId').value,
-                first_name: document.getElementById('firstName').value,
-                last_name: document.getElementById('lastName').value,
-                email: document.getElementById('email').value
-            };
+            // gather values
+            const studentIdVal = document.getElementById('studentId').value.trim();
+            const firstNameVal = document.getElementById('firstName').value.trim();
+            const lastNameVal = document.getElementById('lastName').value.trim();
+            let emailVal = document.getElementById('email').value.trim();
 
-            if (!studentData.student_id || !studentData.first_name || !studentData.last_name) {
+            if (!studentIdVal || !firstNameVal || !lastNameVal) {
                 alert('Please fill in all required fields');
                 return;
             }
+
+            // if email not provided, build from student id
+            if (!emailVal) {
+                if (studentIdVal.includes('@')) {
+                    emailVal = studentIdVal;
+                } else {
+                    emailVal = `${studentIdVal}@monmouth.edu`;
+                }
+                document.getElementById('email').value = emailVal;
+            }
+
+            const studentData = {
+                student_id: studentIdVal,
+                first_name: firstNameVal,
+                last_name: lastNameVal,
+                email: emailVal
+            };
 
             try {
                 const response = await fetch(`${API_URL}/classes/${classId}/students`, {
@@ -721,14 +747,20 @@
                 
                 if (response.ok) {
                     closeModal('addStudent');
+                    // refresh students for the selected class
                     loadStudents();
+                    // clear modal fields
                     document.getElementById('studentId').value = '';
                     document.getElementById('firstName').value = '';
                     document.getElementById('lastName').value = '';
                     document.getElementById('email').value = '';
+                } else {
+                    const err = await response.json().catch(() => null);
+                    alert(err && err.error ? `Error adding student: ${err.error}` : 'Error adding student');
                 }
             } catch (error) {
                 console.error('Error adding student:', error);
+                alert('Error adding student');
             }
         }
 
