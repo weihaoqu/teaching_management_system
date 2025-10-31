@@ -1,0 +1,51 @@
+{
+  "classes": [
+    {
+      "course_code": "d",
+      "course_name": "d",
+      "semester": "d",
+      "schedule": "d",
+      "room": "s",
+      "id": "d_d",
+      "created_at": "2025-10-31T12:48:50.175888"
+    }
+  ],
+  "students": {
+    "d_d": [
+      {
+        "student_id": "001",
+        "first_name": "Chris",
+        "last_name": "B",
+        "email": "s0001@monmouth.edu",
+        "id": "student_0"
+      },
+      {
+        "student_id": "002",
+        "first_name": "Dan",
+        "last_name": "C",
+        "email": "s002@monmouth.edu",
+        "id": "student_1"
+      }
+    ]
+  },
+  "attendance": {
+    "d_d": {
+      "2025-10-31": [
+        {
+          "student_id": "student_0",
+          "status": "late"
+        }
+      ],
+      "2025-11-01": [
+        {
+          "student_id": "student_0",
+          "status": "present"
+        },
+        {
+          "student_id": "student_1",
+          "status": "absent"
+        }
+      ]
+    }
+  }
+}
